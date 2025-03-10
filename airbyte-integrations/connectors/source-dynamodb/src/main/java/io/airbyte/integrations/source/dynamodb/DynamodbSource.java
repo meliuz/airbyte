@@ -70,42 +70,48 @@ public class DynamodbSource extends BaseConnector implements Source {
 
   @Override
   public AirbyteCatalog discover(final JsonNode config) {
-
     final var dynamodbConfig = DynamodbConfig.createDynamodbConfig(config);
     List<AirbyteStream> airbyteStreams = new ArrayList<>();
 
     try (final var dynamodbOperations = new DynamodbOperations(dynamodbConfig)) {
+        // Obtém todas as tabelas disponíveis
+        List<String> allTables = dynamodbOperations.listTables();
+        
+        // Filtra apenas as tabelas permitidas pela configuração
+        List<String> filteredTables = dynamodbConfig.filterTables().isEmpty() 
+            ? allTables 
+            : allTables.stream()
+                       .filter(dynamodbConfig.filterTables()::contains)
+                       .toList();
 
-      dynamodbOperations.listTables().forEach(table -> {
-        try {
-          airbyteStreams.add(
-              new AirbyteStream()
-                  .withName(table)
-                  .withJsonSchema(Jsons.jsonNode(ImmutableMap.builder()
-                      .put("type", "object")
-                      // will throw DynamoDbException if it can't scan the table from missing read permissions
-                      .put("properties", dynamodbOperations.inferSchema(table, 1000))
-                      .build()))
-                  .withSourceDefinedPrimaryKey(Collections.singletonList(dynamodbOperations.primaryKey(table)))
-                  .withSupportedSyncModes(List.of(SyncMode.FULL_REFRESH, SyncMode.INCREMENTAL)));
-        } catch (DynamoDbException e) {
-          if (dynamodbConfig.ignoreMissingPermissions()) {
-            // fragile way to check for missing read access but there is no dedicated exception for missing
-            // permissions.
-            if (e.getMessage().contains("not authorized")) {
-              LOGGER.warn("Connector doesn't have READ access for the table {}", table);
-            } else {
-              throw e;
+        filteredTables.forEach(table -> {
+            try {
+                airbyteStreams.add(
+                    new AirbyteStream()
+                        .withName(table)
+                        .withJsonSchema(Jsons.jsonNode(ImmutableMap.builder()
+                            .put("type", "object")
+                            .put("properties", dynamodbOperations.inferSchema(table, 1000))
+                            .build()))
+                        .withSourceDefinedPrimaryKey(Collections.singletonList(dynamodbOperations.primaryKey(table)))
+                        .withSupportedSyncModes(List.of(SyncMode.FULL_REFRESH, SyncMode.INCREMENTAL))
+                );
+            } catch (DynamoDbException e) {
+                if (dynamodbConfig.ignoreMissingPermissions()) {
+                    if (e.getMessage().contains("not authorized")) {
+                        LOGGER.warn("Connector não tem acesso de leitura para a tabela {}", table);
+                    } else {
+                        throw e;
+                    }
+                } else {
+                    throw e;
+                }
             }
-          } else {
-            throw e;
-          }
-        }
-      });
+        });
     }
 
     return new AirbyteCatalog().withStreams(airbyteStreams);
-  }
+}
 
   @Override
   public AutoCloseableIterator<AirbyteMessage> read(final JsonNode config,
