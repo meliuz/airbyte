@@ -8,9 +8,9 @@ metadata:
   description: '### Getting Started
 
 
-    - [Deploy Airbyte Open Source](https://docs.airbyte.com/quickstart/deploy-airbyte)
-    or set up [Airbyte Cloud](https://docs.airbyte...'
+    - [Deploy Airbyte Open Source](https://docs.airbyte.com/quickstart/deploy-airbyte) or set up [Airbyte Cloud](https://docs.airbyte...'
   name: airbyte
 spec:
   lifecycle: production
   type: service
+  owner: Unknown
