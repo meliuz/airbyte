@@ -5,11 +5,17 @@ metadata:
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: meliuz/airbyte
-  description: '### Getting Started
+  description: |-
+    ### Getting Started
 
+<<<<<<< Updated upstream
 
     - [Deploy Airbyte Open Source](https://docs.airbyte.com/quickstart/deploy-airbyte)
     or set up [Airbyte Cloud](https://docs.airbyte...'
+=======
+    - [Deploy Airbyte Open Source](https://docs.airbyte.com/quickstart/deploy-
+    airbyte) or set up [Airbyte Cloud](https://docs.airbyte...
+>>>>>>> Stashed changes
   name: airbyte
 spec:
   lifecycle: production
